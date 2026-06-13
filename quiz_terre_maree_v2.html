@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Quiz - Terre et Marée</title>
+<style>
+*{box-sizing:border-box;}
+body{font-family:'Trebuchet MS',Arial,sans-serif;margin:0;min-height:100vh;
+  background:linear-gradient(180deg,#7ec8e3 0%,#bce3f0 35%,#fdf4d6 55%,#f6e3b4 100%);
+  padding:20px;}
+.container{max-width:640px;margin:auto;background:rgba(255,255,255,0.92);border-radius:24px;
+  padding:24px;box-shadow:0 10px 30px rgba(0,60,90,0.25);position:relative;overflow:hidden;}
+h1{color:#1f5f7a;text-align:center;font-size:1.6em;margin:0 0 4px;}
+.subtitle{text-align:center;color:#4a90a4;margin-bottom:14px;font-size:0.95em;}
+.wave{text-align:center;font-size:2em;animation:bob 2s ease-in-out infinite;margin-bottom:6px;}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+.progress-bar{height:14px;background:#e0f0f5;border-radius:10px;overflow:hidden;margin-bottom:18px;border:1px solid #cfe7ee;}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#4ecdc4,#1f8a99);transition:width .4s ease;}
+
+.question{margin-bottom:16px;padding:16px;border-radius:16px;background:#f4faff;
+  border:2px solid #d6eef5;transition:transform .2s;}
+.question.answered{border-color:#b8e0ec;}
+.question p{font-weight:bold;margin:0 0 10px;font-size:1.05em;color:#1f5f7a;}
+.illu{font-size:1.7em;margin-right:8px;vertical-align:middle;}
+
+.opt{display:block;width:100%;text-align:left;padding:10px 14px;margin:6px 0;border-radius:12px;
+  border:2px solid #d6e9f0;background:#fff;cursor:pointer;font-size:0.98em;color:#333;
+  transition:all .15s;}
+.opt:hover{background:#eaf7fb;border-color:#9fd6e6;transform:translateX(3px);}
+.opt.selected{background:#dff0fa;border-color:#5aa9c2;font-weight:bold;}
+.opt.correct{background:#cdf5d3;border-color:#4caf50;font-weight:bold;}
+.opt.correct::after{content:" ✅";}
+.opt.wrong{background:#fbd7d7;border-color:#e57373;}
+.opt.wrong::after{content:" ❌";}
+.opt:disabled{cursor:default;transform:none;}
+
+#submit{display:block;margin:20px auto 4px;padding:13px 32px;background:linear-gradient(90deg,#2a9fb5,#1f5f7a);
+  color:#fff;border:none;border-radius:14px;font-size:1.1em;cursor:pointer;font-weight:bold;
+  box-shadow:0 4px 10px rgba(30,90,110,0.3);transition:transform .15s;}
+#submit:hover{transform:scale(1.04);}
+#submit:active{transform:scale(0.98);}
+
+#score{text-align:center;font-size:1.4em;font-weight:bold;margin-top:14px;color:#1f5f7a;
+  opacity:0;transition:opacity .5s;}
+#score.show{opacity:1;}
+
+.compass{text-align:center;font-size:2.6em;margin-bottom:8px;animation:spin 8s linear infinite;display:inline-block;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.compasswrap{text-align:center;}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="wave">🌊⛰️🌊</div>
+<h1>Quiz : Terre & Marée</h1>
+<div class="subtitle">Les verbes <i>oda / tu</i> et l'orientation spatiale</div>
+<div class="compasswrap"><span class="compass">🧭</span></div>
+
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<div id="quiz"></div>
+<button id="submit" onclick="checkAnswers()">🎯 Valider mes réponses</button>
+<div id="score"></div>
+</div>
+
+<script>
+const questions = [
+{illu:"⛰️🌅", q:"Le verbe \"oda\" (monter) est associé à quelle direction ?", opts:["Vers la mer 🌊","Vers la terre / les champs 🏞️","Vers le ciel uniquement ☁️","Aucune direction"], correct:1},
+{illu:"🌊🏘️", q:"Le verbe \"tu\" (descendre) est associé à quelle direction ?", opts:["Vers la terre 🏞️","Vers le bord de mer / le village 🏘️","Vers la montagne ⛰️","Vers le sud uniquement"], correct:1},
+{illu:"🧭", q:"Selon le tableau, \"oda, da\" correspond à quelle(s) direction(s) cardinale(s) ?", opts:["Au nord, à l'ouest 🧭","Au sud, à l'est 🧭","À l'est uniquement","Au nord uniquement"], correct:1},
+{illu:"🏖️🌅", q:"\"tu, du\" correspond à quelle(s) direction(s) cardinale(s) ?", opts:["Au sud, à l'est","Au nord, à l'ouest 🧭","Au centre","Vers le haut"], correct:1},
+{illu:"📈⏳", q:"Quelle valeur temporelle est associée à \"oda, da\" ?", opts:["Se produire (ponctuel) ⏰","Progresser, changer 📈","Revenir en arrière","Aucune valeur temporelle"], correct:1},
+{illu:"🌊⏰", q:"Quelle valeur temporelle est associée à \"tu, du\" ?", opts:["Progresser, changer","Se produire ⏰","Monter graduellement","Aucune"], correct:1},
+{illu:"⛰️🌊", q:"Sur l'axe vertical, \"oda/da\" = monter/en haut, et \"tu/du\" = ?", opts:["Monter/en haut aussi","Descendre / en bas ⬇️","Transverse, de côté","Centripète"], correct:1},
+{illu:"🏝️➡️🏠", q:"En orientation spatiale, aller vers la TERRE (intérieur des terres) se fait avec :", opts:["tu","oda 🏞️","ve","xi"], correct:1},
+{illu:"🌊⬅️🏠", q:"Retourner vers le BORD DE MER ou la PLEINE MER se fait avec :", opts:["oda","da","tu 🌊","me"], correct:2},
+{illu:"🧭⛰️🌊", q:"En résumé, l'axe terre/mer est lié à l'axe :", opts:["Transverse (ve)","Centripète/centrifuge (me/xi)","Haut/bas (oda-da / tu-du) ⛰️🌊","Aucun lien"], correct:2}
+];
+
+const quizDiv = document.getElementById('quiz');
+questions.forEach((item,i)=>{
+  const div = document.createElement('div');
+  div.className='question';
+  div.id = 'q'+i;
+  let html = `<p><span class="illu">${item.illu}</span>${i+1}. ${item.q}</p>`;
+  item.opts.forEach((opt,j)=>{
+    html += `<button class="opt" data-q="${i}" data-i="${j}" onclick="select(this)">${opt}</button>`;
+  });
+  div.innerHTML = html;
+  quizDiv.appendChild(div);
+});
+
+const answers = {};
+function updateProgress(){
+  const pct = Object.keys(answers).length / questions.length * 100;
+  document.getElementById('progress').style.width = pct+'%';
+}
+
+function select(btn){
+  const q = btn.dataset.q;
+  document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('q'+q).classList.add('answered');
+  answers[q] = parseInt(btn.dataset.i);
+  updateProgress();
+}
+
+function checkAnswers(){
+  let score=0;
+  questions.forEach((item,i)=>{
+    document.querySelectorAll(`.opt[data-q="${i}"]`).forEach((b,j)=>{
+      b.disabled=true;
+      b.classList.remove('selected');
+      if(j===item.correct) b.classList.add('correct');
+      else if(answers[i]===j) b.classList.add('wrong');
+    });
+    if(answers[i]===item.correct) score++;
+  });
+  let msg = `Score : ${score} / ${questions.length}`;
+  if(score===questions.length) msg += " 🏆 Parfait !";
+  else if(score>=questions.length*0.7) msg += " 🌊 Bien joué !";
+  else msg += " ⛰️ Continue à grimper !";
+  const scoreEl = document.getElementById('score');
+  scoreEl.textContent = msg;
+  scoreEl.classList.add('show');
+  scoreEl.scrollIntoView({behavior:'smooth', block:'center'});
+}
+</script>
+</body>
+</html>
